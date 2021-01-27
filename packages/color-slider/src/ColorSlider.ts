@@ -64,6 +64,9 @@ export class ColorSlider extends Focusable {
 
     private _value = 0;
 
+    @property({ type: Number })
+    public sliderHandlePosition = 0;
+
     @property({ type: String })
     public get color():
         | string
@@ -190,7 +193,10 @@ export class ColorSlider extends Focusable {
                 delta = this.step * (this.isLTR ? 1 : -1);
                 break;
         }
-        this.value = Math.min(100, Math.max(0, this.value + delta));
+        this.sliderHandlePosition = Math.min(
+            100,
+            Math.max(0, this.sliderHandlePosition + delta)
+        );
     }
 
     private handleKeyup(event: KeyboardEvent): void {
@@ -224,6 +230,8 @@ export class ColorSlider extends Focusable {
 
     private handlePointermove(event: PointerEvent): void {
         this.value = this.calculateHandlePosition(event);
+        this.sliderHandlePosition = this.calculateHandlePosition(event);
+
         this.color = `hsl(${360 * (this.value / 100)}, 100%, 50%)`;
         this.dispatchEvent(
             new Event('input', {
@@ -252,7 +260,7 @@ export class ColorSlider extends Focusable {
     private calculateHandlePosition(event: PointerEvent): number {
         /* c8 ignore next 3 */
         if (!this.boundingClientRect) {
-            return this.value;
+            return this.sliderHandlePosition;
         }
         const rect = this.boundingClientRect;
         const minOffset = this.vertical ? rect.top : rect.left;
@@ -261,9 +269,10 @@ export class ColorSlider extends Focusable {
 
         const percent = Math.max(0, Math.min(1, (offset - minOffset) / size));
         // const value = this.min + (this.max - this.min) * percent;
-        const value = 100 * percent;
+        const sliderHandlePosition = 100 * percent;
+        console.log(sliderHandlePosition);
 
-        return this.isLTR ? value : 100 - value;
+        return this.isLTR ? sliderHandlePosition : 100 - sliderHandlePosition;
     }
 
     private handleGradientPointerdown(event: PointerEvent): void {
@@ -295,7 +304,8 @@ export class ColorSlider extends Focusable {
                 class="handle"
                 color=${this._color.toHslString()}
                 ?disabled=${this.disabled}
-                style="${this.vertical ? 'top' : 'left'}: ${this.value}%"
+                style="${this.vertical ? 'top' : 'left'}: ${this
+                    .sliderHandlePosition}%"
                 @manage=${streamingListener(
                     { type: 'pointerdown', fn: this.handlePointerdown },
                     { type: 'pointermove', fn: this.handlePointermove },
@@ -307,10 +317,10 @@ export class ColorSlider extends Focusable {
                 type="range"
                 class="slider"
                 min="0"
-                max="100"
+                max="360"
                 step=${this.step}
                 aria-label="color"
-                .value=${String(this.value)}
+                .value=${String(this.sliderHandlePosition)}
                 @keydown=${this.handleKeydown}
                 @keyup=${this.handleKeyup}
                 @focus=${this.handleFocus}
