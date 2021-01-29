@@ -86,6 +86,7 @@
         "@spectrum-web-components/sidenav": "^0.8.0",
         "@spectrum-web-components/slider": "^0.8.1",
         "@spectrum-web-components/split-button": "^0.3.1",
+        "@spectrum-web-components/split-view": "^0.0.1",
         "@spectrum-web-components/status-light": "^0.6.0",
         "@spectrum-web-components/switch": "^0.6.1",
         "@spectrum-web-components/tabs": "^0.4.1",
