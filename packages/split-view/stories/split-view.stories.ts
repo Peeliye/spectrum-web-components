@@ -22,8 +22,8 @@ export default {
 export const Horizontal = (): TemplateResult => {
     return html`
         <sp-split-view style="height: 200px" primary-default="100">
-            <div slot="primary">First panel</div>
-            <div slot="secondary">Second panel</div>
+            <div>First panel</div>
+            <div>Second panel</div>
         </sp-split-view>
     `;
 };
@@ -34,17 +34,18 @@ export const HorizontalResizable = (): TemplateResult => {
             resizable
             primary-min="50"
             primary-max="Infinity"
+            primary-default="100"
             secondary-min="50"
             secondary-max="Infinity"
         >
-            <div slot="primary">
+            <div>
                 <h1>First panel</h1>
                 <p>
                     Lorem Ipsum is simply dummy text of the printing and
                     typesetting industry.
                 </p>
             </div>
-            <div slot="secondary">
+            <div>
                 <h2>Second panel</h2>
                 <p>
                     It is a long established fact that a reader will be
@@ -60,14 +61,11 @@ export const HorizontalResizableCollapsible = (): TemplateResult => {
     return html`
         <sp-split-view
             resizable
-            collapsible
-            primary-min="50"
             primary-max="Infinity"
-            secondary-min="50"
             secondary-max="Infinity"
             style="height: 200px; width: 400px;"
         >
-            <div slot="primary">
+            <div>
                 <h1>First panel</h1>
                 <p>
                     Lorem Ipsum is simply dummy text of the printing and
@@ -82,7 +80,7 @@ export const HorizontalResizableCollapsible = (): TemplateResult => {
                     like Aldus PageMaker including versions of Lorem Ipsum.
                 </p>
             </div>
-            <div slot="secondary">
+            <div>
                 <h2>Second panel</h2>
                 <p>
                     It is a long established fact that a reader will be
@@ -105,8 +103,8 @@ export const HorizontalResizableCollapsible = (): TemplateResult => {
 export const Vertical = (): TemplateResult => {
     return html`
         <sp-split-view vertical>
-            <div slot="primary">First panel</div>
-            <div slot="secondary">Second panel</div>
+            <div>First panel</div>
+            <div>Second panel</div>
         </sp-split-view>
     `;
 };
@@ -120,8 +118,9 @@ export const VerticalResizable = (): TemplateResult => {
             primary-max="Infinity"
             secondary-min="50"
             secondary-max="Infinity"
+            style="height: 400px;"
         >
-            <div slot="primary">
+            <div>
                 <h1>First panel</h1>
                 <p>
                     Lorem Ipsum is simply dummy text of the printing and
@@ -136,7 +135,7 @@ export const VerticalResizable = (): TemplateResult => {
                     like Aldus PageMaker including versions of Lorem Ipsum.
                 </p>
             </div>
-            <div slot="secondary">
+            <div>
                 <h2>Second panel</h2>
                 <p>
                     It is a long established fact that a reader will be
@@ -161,15 +160,10 @@ export const VerticalResizableCollapsible = (): TemplateResult => {
         <sp-split-view
             vertical
             resizable
-            collapsible
-            primary-min="50"
-            primary-max="Infinity"
             primary-default="250"
-            secondary-min="50"
-            secondary-max="Infinity"
             style="height: 400px;"
         >
-            <div slot="primary">
+            <div>
                 <h1>First panel</h1>
                 <p>
                     Lorem Ipsum is simply dummy text of the printing and
@@ -184,7 +178,7 @@ export const VerticalResizableCollapsible = (): TemplateResult => {
                     like Aldus PageMaker including versions of Lorem Ipsum.
                 </p>
             </div>
-            <div slot="secondary">
+            <div>
                 <h2>Second panel</h2>
                 <p>
                     It is a long established fact that a reader will be
@@ -199,6 +193,64 @@ export const VerticalResizableCollapsible = (): TemplateResult => {
                     over the years, sometimes by accident, sometimes on purpose
                     (injected humour and the like).
                 </p>
+            </div>
+        </sp-split-view>
+    `;
+};
+
+export const MultipleLevels = (): TemplateResult => {
+    return html`
+        <sp-split-view
+            resizable
+            primary-min="50"
+            primary-max="Infinity"
+            secondary-min="50"
+            secondary-max="Infinity"
+            style="height: 400px; width: 600px;"
+        >
+            <div>
+                <h1>First panel</h1>
+                <p>
+                    Lorem Ipsum is simply dummy text of the printing and
+                    typesetting industry. Lorem Ipsum has been the industry's
+                    standard dummy text ever since the 1500s, when an unknown
+                    printer took a galley of type and scrambled it to make a
+                    type specimen book. It has survived not only five centuries,
+                    but also the leap into electronic typesetting, remaining
+                    essentially unchanged. It was popularised in the 1960s with
+                    the release of Letraset sheets containing Lorem Ipsum
+                    passages, and more recently with desktop publishing software
+                    like Aldus PageMaker including versions of Lorem Ipsum.
+                </p>
+            </div>
+            <div>
+                <h2>Second panel</h2>
+                <sp-split-view
+                    vertical
+                    resizable
+                    primary-min="50"
+                    primary-max="Infinity"
+                    primary-default="150"
+                    secondary-min="50"
+                    secondary-max="Infinity"
+                    style="height: 300px;"
+                >
+                    <div>
+                        <h1>First panel</h1>
+                        <p>
+                            Lorem Ipsum is simply dummy text of the printing and
+                            typesetting industry.
+                        </p>
+                    </div>
+                    <div>
+                        <h2>Second panel</h2>
+                        <p>
+                            It is a long established fact that a reader will be
+                            distracted by the readable content of a page when
+                            looking at its layout.
+                        </p>
+                    </div>
+                </sp-split-view>
             </div>
         </sp-split-view>
     `;

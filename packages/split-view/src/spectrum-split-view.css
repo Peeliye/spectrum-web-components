@@ -15,7 +15,7 @@ THIS FILE IS MACHINE GENERATED. DO NOT EDIT */
     display: flex;
     overflow: hidden;
 }
-.pane {
+::slotted(*) {
     /* .spectrum-SplitView-pane */
     height: 100%;
 }
@@ -149,7 +149,7 @@ THIS FILE IS MACHINE GENERATED. DO NOT EDIT */
     /* .spectrum-SplitView--vertical */
     flex-direction: column;
 }
-:host([vertical]) .pane {
+:host([vertical]) ::slotted(*) {
     /* .spectrum-SplitView--vertical .spectrum-SplitView-pane */
     height: auto;
     width: 100%;
@@ -247,7 +247,7 @@ THIS FILE IS MACHINE GENERATED. DO NOT EDIT */
     top: auto;
     bottom: 0;
 }
-.pane {
+::slotted(*) {
     /* .spectrum-SplitView-pane */
     background-color: var(
         --spectrum-panel-background-color,

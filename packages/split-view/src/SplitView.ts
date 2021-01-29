@@ -16,17 +16,12 @@ import {
     CSSResultArray,
     TemplateResult,
     property,
-    css,
     PropertyValues,
     ifDefined,
+    query,
 } from '@spectrum-web-components/base';
 
 import styles from './split-view.css.js';
-
-const ORIENTATIONS = {
-    horizontal: 'width',
-    vertical: 'height',
-};
 
 const CURSORS = {
     horizontal: {
@@ -41,29 +36,18 @@ const CURSORS = {
     },
 };
 
-const COLLAPSE_THREASHOLD = 50;
-
 const SPLITTERSIZE = 2;
+
+const ARROW_KEY_CHANGE_VALUE = 10;
+
+const PAGEUPDOWN_KEY_CHANGE_VALUE = 50;
 
 /**
  * @element sp-split-view
  */
 export class SplitView extends SpectrumElement {
     public static get styles(): CSSResultArray {
-        return [
-            styles,
-            css`
-                .pane {
-                    overflow: hidden;
-                }
-                .secondaryPane {
-                    flex: 1;
-                }
-                #splitter {
-                    height: auto; /* for horizontal splitviews without proper outter height value */
-                }
-            `,
-        ];
+        return [styles];
     }
 
     @property({ type: Boolean, reflect: true })
@@ -72,12 +56,9 @@ export class SplitView extends SpectrumElement {
     @property({ type: Boolean, reflect: true })
     public resizable = false;
 
-    @property({ type: Boolean, reflect: true })
-    public collapsible = false;
-
     /** The minimum size of the primary pane */
     @property({ type: Number, attribute: 'primary-min' })
-    public primaryMin = 304;
+    public primaryMin = 0;
 
     /** The maximum size of the primary pane */
     @property({ type: Number, attribute: 'primary-max' })
@@ -89,18 +70,18 @@ export class SplitView extends SpectrumElement {
 
     /** The default size of the primary pane */
     @property({ type: Number, attribute: 'primary-default' })
-    public primaryDefault = 304;
+    public primaryDefault?: number;
 
     /** The minimum size of the secondary pane */
     @property({ type: Number, attribute: 'secondary-min' })
-    public secondaryMin = 304;
+    public secondaryMin = 0;
 
     /** The maximum size of the secondary pane */
     @property({ type: Number, attribute: 'secondary-max' })
     public secondaryMax = Infinity;
 
     @property({ type: Number, attribute: false })
-    public dividerPosition = this.primaryDefault;
+    public dividerPosition = 0;
 
     @property({ type: Number, attribute: false })
     public minPos = 0;
@@ -109,7 +90,7 @@ export class SplitView extends SpectrumElement {
     public maxPos = Infinity;
 
     @property({ type: Boolean, reflect: true, attribute: 'is-collapsed-start' })
-    public isCollapsedStart = this.dividerPosition === 0;
+    public isCollapsedStart = false;
 
     @property({ type: Boolean, reflect: true, attribute: 'is-collapsed-end' })
     public isCollapsedEnd = false;
@@ -123,48 +104,50 @@ export class SplitView extends SpectrumElement {
     @property()
     public label?: string;
 
+    @query('slot')
+    private paneSlot!: HTMLSlotElement;
+
+    public get size(): number {
+        return this.vertical ? this.offsetHeight : this.offsetWidth;
+    }
+
     private offset = 0;
-    private size = 0;
+    // private size = 0;
     private isOver = false;
     private lastPosition = 0;
+    // @ts-ignore
+    private observer: ResizeObserver;
+
+    private rect?: DOMRect;
 
     public constructor() {
         super();
-        this.onPointerDragged = this.onPointerDragged.bind(this);
-        this.onPointerUp = this.onPointerUp.bind(this);
-        this.resize = this.resize.bind(this);
-        this.updatePosition = this.updatePosition.bind(this);
-        this.getSplitterSize = this.getSplitterSize.bind(this);
+        // @ts-ignore
+        this.observer = new ResizeObserver((entries) => {
+            this.rect = undefined;
+            this.resize();
+        });
     }
 
     public connectedCallback(): void {
         super.connectedCallback();
-        window.addEventListener('resize', this.resize);
+        this.observer.observe(this);
     }
 
     public disconnectedCallback(): void {
-        window.removeEventListener('resize', this.resize);
+        this.observer.unobserve(this);
         super.disconnectedCallback();
     }
 
     protected render(): TemplateResult {
-        const dimension = this.vertical
-            ? ORIENTATIONS.vertical
-            : ORIENTATIONS.horizontal;
-
         return html`
-            <div
-                class="pane"
-                style=${`${dimension}: ${this.dividerPosition}px`}
-            >
-                <slot name="primary"></slot>
-            </div>
+            <slot></slot>
             <div
                 id="splitter"
                 role="separator"
                 aria-label=${ifDefined(this.label || undefined)}
                 tabindex=${ifDefined(this.resizable ? '0' : undefined)}
-                @keydown=${this.onKeyDown}
+                @keydown=${this.onKeydown}
             >
                 ${this.resizable
                     ? html`
@@ -172,13 +155,10 @@ export class SplitView extends SpectrumElement {
                       `
                     : html``}
             </div>
-            <div class="pane secondaryPane">
-                <slot name="secondary"></slot>
-            </div>
         `;
     }
 
-    private onPointerMove(event: PointerEvent): void {
+    private onPointermove(event: PointerEvent): void {
         this.isOver = true;
         if (this.dragging) {
             return;
@@ -186,46 +166,39 @@ export class SplitView extends SpectrumElement {
         this.updateCursor(event);
     }
 
-    private onPointerDown(event: PointerEvent): void {
+    private onPointerdown(event: PointerEvent): void {
         if (event.button && event.button !== 0) {
             return;
         }
+        if (this.primarySize !== undefined) {
+            return;
+        }
         if (this.hovered) {
-            if (this.primarySize !== undefined) {
-                return;
-            }
-            window.addEventListener(
-                'pointermove',
-                this.onPointerDragged,
-                false
-            );
-            window.addEventListener('pointerup', this.onPointerUp, false);
+            this.setPointerCapture(event.pointerId);
+            this.onpointermove = this.onPointerdragged;
             this.dragging = true;
             this.offset = this.getOffset();
         }
     }
 
-    protected onPointerDragged(event: PointerEvent): void {
-        if (!this.dragging) {
-            return;
-        }
+    private onPointerdragged(event: PointerEvent): void {
         event.preventDefault();
         let pos = this.getPosition(event) - this.offset;
-        if (this.collapsible && pos < this.minPos - COLLAPSE_THREASHOLD) {
-            pos = 0;
+        if (pos < this.minPos) {
+            pos = this.minPos;
         }
-        if (this.collapsible && pos > this.maxPos + COLLAPSE_THREASHOLD) {
-            pos = this.size - this.getSplitterSize();
+        if (pos > this.maxPos) {
+            pos = this.maxPos;
         }
         this.updatePosition(pos);
     }
 
-    protected onPointerUp(event: PointerEvent): void {
+    private onPointerup(event: PointerEvent): void {
         if (!this.dragging) {
             return;
         }
-        window.removeEventListener('pointermove', this.onPointerDragged, false);
-        window.removeEventListener('pointerup', this.onPointerUp, false);
+        this.releasePointerCapture(event.pointerId);
+        this.onpointermove = this.onPointermove;
         this.updateCursor(event);
         this.dragging = false;
         if (!this.isOver) {
@@ -233,7 +206,7 @@ export class SplitView extends SpectrumElement {
         }
     }
 
-    private onPointerOut(): void {
+    private onPointerout(): void {
         this.isOver = false;
         this.hovered = false;
         if (!this.dragging) {
@@ -242,8 +215,10 @@ export class SplitView extends SpectrumElement {
     }
 
     private getOffset(): number {
-        const rect = this.getBoundingClientRect();
-        return this.vertical ? rect.top : rect.left;
+        if (!this.rect) {
+            this.rect = this.getBoundingClientRect();
+        }
+        return this.vertical ? this.rect.top : this.rect.left;
     }
 
     private getPosition(event: PointerEvent): number {
@@ -260,93 +235,85 @@ export class SplitView extends SpectrumElement {
         this.updatePosition(this.dividerPosition - offset);
     }
 
-    private onKeyDown(event: KeyboardEvent): void {
+    private onKeydown(event: KeyboardEvent): void {
         if (!this.resizable || this.primarySize !== undefined) {
             return;
         }
         switch (event.key) {
             case 'Left':
             case 'ArrowLeft':
-                this.decrement(event, 10);
+                this.decrement(event, ARROW_KEY_CHANGE_VALUE);
                 break;
             case 'Up':
             case 'ArrowUp':
                 if (this.vertical) {
-                    this.decrement(event, 10);
+                    this.decrement(event, ARROW_KEY_CHANGE_VALUE);
                 } else {
-                    this.increment(event, 10);
+                    this.increment(event, ARROW_KEY_CHANGE_VALUE);
                 }
                 break;
             case 'PageUp':
                 if (this.vertical) {
-                    this.decrement(event, 50);
+                    this.decrement(event, PAGEUPDOWN_KEY_CHANGE_VALUE);
                 } else {
-                    this.increment(event, 50);
+                    this.increment(event, PAGEUPDOWN_KEY_CHANGE_VALUE);
                 }
                 break;
             case 'Right':
             case 'ArrowRight':
-                this.increment(event, 10);
+                this.increment(event, ARROW_KEY_CHANGE_VALUE);
                 break;
             case 'Down':
             case 'ArrowDown':
                 if (this.vertical) {
-                    this.increment(event, 10);
+                    this.increment(event, ARROW_KEY_CHANGE_VALUE);
                 } else {
-                    this.decrement(event, 10);
+                    this.decrement(event, ARROW_KEY_CHANGE_VALUE);
                 }
                 break;
             case 'PageDown':
                 if (this.vertical) {
-                    this.increment(event, 50);
+                    this.increment(event, PAGEUPDOWN_KEY_CHANGE_VALUE);
                 } else {
-                    this.decrement(event, 50);
+                    this.decrement(event, PAGEUPDOWN_KEY_CHANGE_VALUE);
                 }
                 break;
             case 'Home':
                 event.preventDefault();
-                this.updatePosition(this.collapsible ? 0 : this.minPos);
+                this.updatePosition(this.minPos);
                 break;
             case 'End':
                 event.preventDefault();
-                this.updatePosition(
-                    this.collapsible
-                        ? this.size - this.getSplitterSize()
-                        : this.maxPos
-                );
+                this.updatePosition(this.maxPos);
                 break;
             case 'Enter':
-                if (this.collapsible) {
-                    event.preventDefault();
-                    this.updatePosition(
-                        this.dividerPosition === 0
-                            ? this.lastPosition || this.minPos
-                            : 0
-                    );
-                }
+                event.preventDefault();
+                this.updatePosition(
+                    this.dividerPosition === this.minPos && this.lastPosition
+                        ? this.lastPosition
+                        : this.minPos
+                );
                 break;
         }
     }
 
     protected resize(): void {
-        this.size = this.vertical ? this.offsetHeight : this.offsetWidth;
         this.minPos = Math.max(this.primaryMin, this.size - this.secondaryMax);
-        this.maxPos = Math.min(this.primaryMax, this.size - this.secondaryMin);
+        this.maxPos = Math.min(
+            this.primaryMax,
+            this.size - this.secondaryMin - this.getSplitterSize()
+        );
         this.updatePosition(this.dividerPosition);
     }
 
     private updatePosition(x: number): void {
         this.lastPosition = this.dividerPosition;
         let pos = Math.max(this.minPos, Math.min(this.maxPos, x));
-        if (this.collapsible && x <= 0) {
-            pos = 0;
+        if (x < this.minPos) {
+            pos = this.minPos;
         }
-        if (
-            this.collapsible &&
-            x > this.maxPos &&
-            x >= this.size - this.getSplitterSize()
-        ) {
-            pos = this.size - this.getSplitterSize();
+        if (x > this.maxPos) {
+            pos = this.maxPos;
         }
         if (pos !== this.dividerPosition) {
             this.dividerPosition = pos;
@@ -403,14 +370,25 @@ export class SplitView extends SpectrumElement {
         super.firstUpdated(changed);
 
         if (this.resizable) {
-            this.addEventListener('pointermove', this.onPointerMove);
-            this.addEventListener('pointerdown', this.onPointerDown);
-            this.addEventListener('pointerout', this.onPointerOut);
+            this.addEventListener('pointermove', this.onPointermove);
+            this.addEventListener('pointerdown', this.onPointerdown);
+            this.addEventListener('pointerup', this.onPointerup);
+            this.addEventListener('pointerout', this.onPointerout);
         }
-        this.dividerPosition =
-            this.primarySize === undefined
-                ? this.primaryDefault
-                : this.primarySize;
+        this.dividerPosition = this.primaryDefault
+            ? this.primaryDefault
+            : Math.round(this.size / 2);
         this.resize();
+    }
+
+    protected updated(changed: PropertyValues): void {
+        super.updated(changed);
+
+        if (changed.has('dividerPosition')) {
+            this.paneSlot.style.setProperty(
+                '--spectrum-split-view-first-pane-size',
+                `${this.dividerPosition}px`
+            );
+        }
     }
 }

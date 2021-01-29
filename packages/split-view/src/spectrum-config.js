@@ -60,10 +60,9 @@ const config = {
                     name: 'gripper',
                 },
             ],
-            classes: [
+            slots: [
                 {
                     selector: '.spectrum-SplitView-pane',
-                    name: 'pane',
                 },
             ],
         },

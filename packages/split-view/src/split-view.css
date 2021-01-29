@@ -11,3 +11,29 @@ governing permissions and limitations under the License.
 */
 
 @import './spectrum-split-view.css';
+:host {
+    --spectrum-split-view-first-pane-size: 50%;
+}
+::slotted(*) {
+    overflow: auto;
+}
+::slotted(:first-child) {
+    order: 1;
+}
+:host(:not([vertical])) ::slotted(:first-child) {
+    width: var(--spectrum-split-view-first-pane-size);
+}
+:host([vertical]) ::slotted(:first-child) {
+    height: var(--spectrum-split-view-first-pane-size);
+}
+::slotted(:nth-child(2)) {
+    order: 3;
+    flex: 1;
+}
+::slotted(:nth-child(n + 3)) {
+    display: none;
+}
+#splitter {
+    order: 2;
+    height: auto; /* for horizontal splitviews without proper outter height value */
+}
