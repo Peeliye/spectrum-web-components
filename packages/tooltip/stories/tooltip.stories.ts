@@ -9,17 +9,19 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-import { html, boolean, select, text } from '@open-wc/demoing-storybook';
-
-import '../sp-tooltip.js';
-import '@spectrum-web-components/icon/sp-icon';
-import '@spectrum-web-components/icons/sp-icons-medium.js';
+import { boolean, html, select, text } from '@open-wc/demoing-storybook';
 import { ifDefined, TemplateResult } from '@spectrum-web-components/base';
+import '@spectrum-web-components/icon/sp-icon';
 import {
     AlertIcon,
     CheckmarkIcon,
     InfoIcon,
 } from '@spectrum-web-components/icons-workflow';
+import '@spectrum-web-components/button/sp-button.js';
+import '@spectrum-web-components/icons/sp-icons-medium.js';
+import { OverlayTrigger } from '@spectrum-web-components/overlay';
+import { Placement } from '@spectrum-web-components/overlay/src/popper';
+import '../sp-tooltip.js';
 
 const tipOptions = ['top', 'bottom', 'left', 'right'];
 
@@ -91,9 +93,7 @@ export const wIcon = (): TemplateResult => {
         >
             ${!!variant
                 ? html`
-                      <sp-icon slot="icon">
-                          ${iconOptions[variant]()}
-                      </sp-icon>
+                      <sp-icon slot="icon">${iconOptions[variant]()}</sp-icon>
                   `
                 : html``}
             ${text('Tip text', 'Tooltip', 'Element')}
@@ -104,3 +104,73 @@ export const wIcon = (): TemplateResult => {
 wIcon.story = {
     name: 'w/ Icon',
 };
+
+const overlayStyles = html`
+    <style>
+        html,
+        body,
+        #root,
+        #root-inner,
+        sp-story-decorator {
+            height: 100%;
+            margin: 0;
+        }
+
+        sp-story-decorator > div {
+            display: contents;
+        }
+
+        sp-story-decorator::part(container) {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        overlay-trigger {
+            flex: none;
+            margin: 24px 0;
+        }
+    </style>
+`;
+
+const overlaid = (placement: Placement): TemplateResult => {
+    requestAnimationFrame(async () => {
+        const overlay = document.querySelector(
+            `overlay-trigger[placement="${placement}"]`
+        ) as OverlayTrigger;
+        await overlay.updateComplete;
+        const trigger = (overlay.shadowRoot as ShadowRoot).querySelector(
+            '#trigger'
+        ) as HTMLDivElement;
+        trigger.dispatchEvent(new MouseEvent('mouseenter'));
+    });
+    return html`
+        ${overlayStyles}
+        ${([
+            ['bottom', ''],
+            ['left', 'negative'],
+            ['right', 'positive'],
+            ['top', 'info'],
+        ] as [Placement, string][]).map(([placement, variant]) => {
+            return html`
+                <overlay-trigger placement=${placement}>
+                    <sp-button label="${placement} test" slot="trigger">
+                        Hover for ${variant ? variant : 'tooltip'} on the
+                        ${placement}
+                    </sp-button>
+                    <sp-tooltip slot="hover-content" variant=${variant} open>
+                        ${placement}
+                    </sp-tooltip>
+                </overlay-trigger>
+            `;
+        })}
+    `;
+};
+
+export const overlaidTop = (): TemplateResult => overlaid('top');
+export const overlaidRight = (): TemplateResult => overlaid('right');
+export const overlaidBottom = (): TemplateResult => overlaid('bottom');
+export const overlaidLeft = (): TemplateResult => overlaid('left');
