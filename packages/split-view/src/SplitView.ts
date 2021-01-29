@@ -22,6 +22,7 @@ import {
 } from '@spectrum-web-components/base';
 
 import styles from './split-view.css.js';
+import '@types/resize-observer-browser';
 
 const CURSORS = {
     horizontal: {
@@ -115,15 +116,13 @@ export class SplitView extends SpectrumElement {
     // private size = 0;
     private isOver = false;
     private lastPosition = 0;
-    // @ts-ignore
     private observer: ResizeObserver;
 
     private rect?: DOMRect;
 
     public constructor() {
         super();
-        // @ts-ignore
-        this.observer = new ResizeObserver((entries) => {
+        this.observer = new ResizeObserver(() => {
             this.rect = undefined;
             this.resize();
         });
