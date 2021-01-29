@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/adobe/spectrum-web-components/compare/@spectrum-web-components/bundle@0.17.1...@spectrum-web-components/bundle@0.18.0) (2021-01-29)
+
+### Bug Fixes
+
+### Features
+
+-   **split-view:** add split-view pattern ([](https://github.com/adobe/spectrum-web-components/commit/))
+
 ## [0.17.1](https://github.com/adobe/spectrum-web-components/compare/@spectrum-web-components/bundle@0.17.0...@spectrum-web-components/bundle@0.17.1) (2021-01-28)
 
 **Note:** Version bump only for package @spectrum-web-components/bundle
